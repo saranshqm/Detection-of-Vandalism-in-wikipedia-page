@@ -1,0 +1,49 @@
+> wiki = read.csv("wiki.csv",stringsAsFactors = FALSE)
+> wiki$Vandal = as.factor(wiki$Vandal)
+> library(tm)
+Loading required package: NLP
+> corpusAdded = VCorpus(VectorSource(wiki$Added)) 
+> corpusAdded = tm_map(corpusAdded, removeWords, stopwords("english"))        # TO REMOVE ALL THE STOP WORDS FROM DATA FRAME
+> corpusAdded = tm_map(corpusAdded, stemDocument)                             # TO STEM THE DOCUMENT (REMOVES LETTERS LIKE S,ED,ED ETC....)
+> dtmAdded = DocumentTermMatrix(corpusAdded)                                  
+> corpusRemoved = VCorpus(VectorSource(wiki$Removed)) 
+> corpusRemoved = tm_map(corpusRemoved, removeWords, stopwords("english"))
+> corpusAdded = tm_map(corpusAdded, stemDocument)
+> corpusAdded = tm_map(corpusAdded, stemDocument)
+> corpusRemoved = tm_map(corpusRemoved, stemDocument)
+> dtmRemoved = DocumentTermMatrix(corpusRemoved)
+> dtmAdded = DocumentTermMatrix(corpusAdded)
+> dtmAdded = removeSparseTerms(dtmAdded,0.997)
+> dtmRemoved = removeSparseTerms(dtmRemoved,0.997)
+> wordsAdded = as.data.frame(as.matrix(dtmAdded))
+> wordsRemoved = as.data.frame(as.matrix(dtmRemoved))
+> wikiWords = cbind(wordsAdded, wordsRemoved)
+> wikiWords$Vandal = wiki$Vandal
+> wikiWords$Minor  = wiki$Minor 
+> wikiWords$Loggedin   = wiki$Loggedin  
+> library(caTools)
+> set.seed(123)
+> spl = sample.split(wikiWords$Vandal, SplitRatio = 0.7)
+> wikiTrain = subset(wikiWords, spl==TRUE)
+> wikiTest = subset(wikiWords, spl==FALSE)
+> wikiWords2 = wikiWords
+> wikiWords2$HTTP = ifelse(grepl("http",wiki$Added,fixed=TRUE), 1, 0)
+> wikiTrain2 = subset(wikiWords2, spl==TRUE)
+> wikiTest2 = subset(wikiWords2, spl==FALSE)
+> library(rpart)
+> library(rpart.plot)
+> wikiCART = rpart(Vandal ~ ., data=wikiTrain2, method="class")
+> predictTestCART = predict(wikiCART, newdata=wikiTest2, type="class")
+> table(wikiTest2$Vandal, predictTestCART)
+   predictTestCART
+      0   1
+  0 539  79
+  1 253 292
+> (539+292)/(539+79+253+292)
+[1] 0.7145314
+> save.image("C:\\Users\\Saransh\\Documents\\R DATA\\Detection of Vandalism in wiki page\\detection of vandalism in wikipedia page")
+
+
+
+
+## we have achieved 71.453% accuracy in our model, this model was solved in R by CART MODEL.
